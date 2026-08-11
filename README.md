@@ -2,7 +2,7 @@
 
 ### Tu estación de radio en la muñeca.  
 
-#W# Imagen Generada con IA.
+## Imagen Generada con IA.
 
 ![OpenWatch Concept](./openwatch-concept.png)
 
