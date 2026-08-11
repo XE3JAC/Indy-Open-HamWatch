@@ -98,7 +98,7 @@ Listo.</pre>
 
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.0</footer>
+<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.1</footer>
 
 </main>
 
@@ -232,7 +232,6 @@ async function loadLatestRelease(){
 
   $("verHamWatch").textContent = releaseInfo.tag;
   $("selectedVersion").textContent = releaseInfo.tag;
-  $("expectedAsset").textContent = releaseInfo.assetName;
   $("flashBtn").textContent = `2. Instalar Indy Open HamWatch ${releaseInfo.tag}`;
 
   log(`Release detectado: ${releaseInfo.tag}`);
