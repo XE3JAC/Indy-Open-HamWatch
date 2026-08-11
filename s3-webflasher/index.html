@@ -26,10 +26,6 @@ h3{color:var(--accent-dark);margin-bottom:8px}
 .status.ok{background:var(--ok);border-left-color:var(--ok-line)}
 .status.error{background:var(--error);border-left-color:var(--error-line)}
 .warning{background:var(--warning);border-left:4px solid var(--warning-line);padding:14px 16px;border-radius:10px;margin-top:18px}
-.selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
-.option{border:2px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;background:#fff}
-.option.selected{border-color:var(--accent);background:#f3fbfb}
-.option strong{color:var(--accent-dark)}
 .small{font-size:.88rem;color:var(--muted)}
 button{appearance:none;border:0;background:var(--accent);color:#fff;padding:12px 16px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer}
 button:hover{background:var(--accent-dark)}
@@ -40,11 +36,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 pre{background:#102a2e;color:#d8f0f2;padding:14px;border-radius:12px;max-height:320px;overflow:auto;font-size:.82rem;white-space:pre-wrap}
 ol{padding-left:1.3rem}
 footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.selector{grid-template-columns:1fr}.hero{padding:26px 22px}}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.hero{padding:26px 22px}}
 </style>
 </head>
 <body>
 <main class="wrap">
+
 <section class="hero">
   <div class="eyebrow">Indy Open Project by XE3JAC</div>
   <h1>INDY OPEN HAMWATCH</h1>
@@ -52,12 +49,13 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
 </section>
 
 <div class="grid">
+
 <section class="card">
   <h2>Instalar firmware</h2>
 
   <div class="status">
     <strong>Firmware:</strong> Indy Open HamWatch<br>
-    <strong>Versión:</strong> <span id="verHamWatch">consultando…</span>
+    <strong>Versión disponible:</strong> <span id="verHamWatch">consultando GitHub…</span>
   </div>
 
   <div id="supportStatus" class="status">Comprobando compatibilidad…</div>
@@ -75,13 +73,15 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
   </div>
 
   <div class="progress"><div id="progressBar"></div></div>
-  <div id="resultStatus" class="status">Preparando Web Flasher…</div>
+  <div id="resultStatus" class="status">Buscando la última versión en GitHub Releases…</div>
 
   <h3>Consola</h3>
   <pre id="log">Indy Open HamWatch — Web Flasher
 Listo.</pre>
 
-  <div class="warning"><strong>Importante:</strong> este instalador es únicamente para el reloj LILYGO basado en ESP32-S3.</div>
+  <div class="warning">
+    <strong>Importante:</strong> este instalador es únicamente para el reloj LILYGO basado en ESP32-S3.
+  </div>
 </section>
 
 <aside class="card">
@@ -91,23 +91,50 @@ Listo.</pre>
     <li>Pulsa <strong>Conectar ESP32-S3</strong>.</li>
     <li>Selecciona el puerto correspondiente al reloj.</li>
     <li>Pulsa <strong>Instalar firmware</strong>.</li>
+    <li>El Web Flasher descargará automáticamente la última versión publicada.</li>
     <li>No desconectes el reloj hasta que aparezca el mensaje de instalación completada.</li>
   </ol>
 
-  <div class="status"><strong>Recomendación:</strong> utiliza un cable USB de datos y mantén esta ventana abierta durante todo el proceso.</div>
-  <div class="warning"><strong>Atención:</strong> la configuración anterior del reloj puede borrarse durante la instalación.</div>
+  <div class="status">
+    <strong>Actualización automática:</strong> el instalador busca Releases cuyo tag comience con
+    <code>watch-v</code>.
+  </div>
+
+  <div class="status">
+    <strong>Nombre esperado:</strong><br>
+    <code id="expectedAsset">indy-open-watch-vX.X.X.bin</code>
+  </div>
+
+  <div class="warning">
+    <strong>Atención:</strong> el archivo publicado debe ser un BIN completo/merged preparado para grabarse desde 0x0.
+  </div>
 </aside>
+
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.1.0</footer>
+<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.0</footer>
+
 </main>
 
-
 <script>
-const BAUD = 115200;
-const MANIFEST_URL = "manifest.json";
+/*
+  ============================================================
+  CONFIGURACIÓN DEL REPOSITORIO
+  ============================================================
+  Si Indy Open HamWatch cambia de repositorio, únicamente
+  modifica GITHUB_OWNER y GITHUB_REPO.
+*/
+const GITHUB_OWNER = "XE3JAC";
+const GITHUB_REPO  = "Indy-Open-HamWatch";
 
-let manifest = null;
+const TAG_PREFIX   = "watch-v";
+const ASSET_PREFIX = "indy-open-watch-";
+const ASSET_SUFFIX = ".bin";
+
+const BAUD = 115200;
+const FLASH_ADDRESS = 0x0;
+
+let releaseInfo = null;
 let port = null;
 let transport = null;
 let loader = null;
@@ -117,8 +144,7 @@ const $ = id => document.getElementById(id);
 
 function log(msg){
   const el = $("log");
-  el.textContent += `
-[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.textContent += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
   el.scrollTop = el.scrollHeight;
 }
 
@@ -132,38 +158,128 @@ function setProgress(p){
   $("progressBar").style.width = `${Math.max(0, Math.min(100, p))}%`;
 }
 
-function getBuild(){
-  return manifest?.builds?.find(b => b.chipFamily === "ESP32-S3") || null;
+function expectedAssetName(tag){
+  const versionPart = tag.startsWith("watch-") ? tag.slice("watch-".length) : tag;
+  return `${ASSET_PREFIX}${versionPart}${ASSET_SUFFIX}`;
 }
 
-async function loadManifest(){
-  setResult("Consultando firmware disponible…");
-  log("Consultando manifest.json…");
+function isValidWatchTag(tag){
+  return typeof tag === "string" && tag.startsWith(TAG_PREFIX);
+}
 
-  const response = await fetch(`${MANIFEST_URL}?nocache=${Date.now()}`, {cache:"no-store"});
-  if(!response.ok) throw new Error(`No fue posible cargar manifest.json (HTTP ${response.status}).`);
+function compareVersions(a, b){
+  const clean = tag => tag.replace(TAG_PREFIX, "").replace(/^v/i, "");
+  const pa = clean(a).split(".").map(n => parseInt(n,10) || 0);
+  const pb = clean(b).split(".").map(n => parseInt(n,10) || 0);
+  const len = Math.max(pa.length, pb.length);
 
-  manifest = await response.json();
-  const build = getBuild();
+  for(let i=0;i<len;i++){
+    const av = pa[i] || 0;
+    const bv = pb[i] || 0;
+    if(av !== bv) return bv - av;
+  }
+  return 0;
+}
 
-  if(!build || !Array.isArray(build.parts) || !build.parts.length){
-    throw new Error("El manifiesto no contiene un firmware válido para ESP32-S3.");
+async function loadLatestRelease(){
+  setResult("Buscando la última versión de Indy Open HamWatch en GitHub Releases…");
+  log("Consultando GitHub Releases…");
+
+  const apiUrl =
+    `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/releases?per_page=50`;
+
+  const response = await fetch(apiUrl, {
+    cache:"no-store",
+    headers:{
+      "Accept":"application/vnd.github+json"
+    }
+  });
+
+  if(!response.ok){
+    if(response.status === 403){
+      throw new Error("GitHub limitó temporalmente las consultas. Intenta nuevamente en unos minutos.");
+    }
+    throw new Error(`No fue posible consultar GitHub Releases (HTTP ${response.status}).`);
   }
 
-  const version = manifest.version || "sin versión";
-  $("verHamWatch").textContent = `v${version}`;
-  $("selectedVersion").textContent = `v${version}`;
-  $("flashBtn").textContent = `2. Instalar Indy Open HamWatch v${version}`;
+  const releases = await response.json();
 
-  log(`Indy Open HamWatch v${version} disponible.`);
-  setResult("Firmware disponible. Conecta tu ESP32-S3.", "ok");
+  const watchReleases = releases
+    .filter(r =>
+      !r.draft &&
+      !r.prerelease &&
+      isValidWatchTag(r.tag_name)
+    )
+    .sort((a,b) => compareVersions(a.tag_name, b.tag_name));
+
+  if(!watchReleases.length){
+    throw new Error(`No se encontró ningún Release estable con tag ${TAG_PREFIX}*.`);
+  }
+
+  let selectedRelease = null;
+  let selectedAsset = null;
+
+  for(const release of watchReleases){
+    const wantedName = expectedAssetName(release.tag_name);
+
+    const asset = (release.assets || []).find(a =>
+      a.name.toLowerCase() === wantedName.toLowerCase()
+    );
+
+    if(asset){
+      selectedRelease = release;
+      selectedAsset = asset;
+      break;
+    }
+  }
+
+  if(!selectedRelease || !selectedAsset){
+    const newest = watchReleases[0];
+    const wanted = expectedAssetName(newest.tag_name);
+
+    throw new Error(
+      `Se encontró ${newest.tag_name}, pero no el archivo ${wanted}.`
+    );
+  }
+
+  releaseInfo = {
+    tag: selectedRelease.tag_name,
+    name: selectedRelease.name || selectedRelease.tag_name,
+    publishedAt: selectedRelease.published_at,
+    assetName: selectedAsset.name,
+    assetUrl: selectedAsset.browser_download_url,
+    assetSize: selectedAsset.size
+  };
+
+  $("verHamWatch").textContent = releaseInfo.tag;
+  $("selectedVersion").textContent = releaseInfo.tag;
+  $("expectedAsset").textContent = releaseInfo.assetName;
+  $("flashBtn").textContent = `2. Instalar Indy Open HamWatch ${releaseInfo.tag}`;
+
+  log(`Release detectado: ${releaseInfo.tag}`);
+  log(`Firmware detectado: ${releaseInfo.assetName}`);
+  log(`Tamaño publicado: ${(releaseInfo.assetSize/1024/1024).toFixed(2)} MB`);
+
+  setResult(
+    `Última versión disponible: ${releaseInfo.tag}. Conecta tu ESP32-S3.`,
+    "ok"
+  );
+
+  if(loader){
+    $("flashBtn").disabled = false;
+  }
 }
 
 async function loadEsptool(){
   if(esptoolModule) return esptoolModule;
+
   setResult("Preparando conexión USB…");
   log("Cargando componente de programación…");
-  esptoolModule = await import("https://cdn.jsdelivr.net/npm/esptool-js@0.6.0/+esm");
+
+  esptoolModule = await import(
+    "https://cdn.jsdelivr.net/npm/esptool-js@0.6.0/+esm"
+  );
+
   log("Componente de programación listo.");
   return esptoolModule;
 }
@@ -188,12 +304,12 @@ async function connectBoard(){
   loader = new ESPLoader({
     transport,
     baudrate: BAUD,
-    terminal: {
+    terminal:{
       clean(){},
       writeLine(data){ if(data) log(String(data)); },
       write(data){ if(data) log(String(data).trimEnd()); }
     },
-    debugLogging: false
+    debugLogging:false
   });
 
   setResult("Conectando con el ESP32-S3…");
@@ -202,50 +318,66 @@ async function connectBoard(){
   const chip = await loader.main();
   const chipText = String(chip || "");
 
-  if(!chipText.toUpperCase().includes("ESP32-S3") &&
-     !chipText.toUpperCase().includes("ESP32S3")){
-    throw new Error(`La placa conectada no parece ser un ESP32-S3 (${chipText || "chip desconocido"}).`);
+  if(
+    !chipText.toUpperCase().includes("ESP32-S3") &&
+    !chipText.toUpperCase().includes("ESP32S3")
+  ){
+    throw new Error(
+      `La placa conectada no parece ser un ESP32-S3 (${chipText || "chip desconocido"}).`
+    );
   }
 
   $("deviceState").textContent = "ESP32-S3 conectado";
-  $("flashBtn").disabled = !manifest;
+  $("flashBtn").disabled = !releaseInfo;
+
   log(`ESP32-S3 detectado correctamente: ${chipText}`);
-  setResult("ESP32-S3 conectado. Listo para instalar.", "ok");
+  setResult(
+    releaseInfo
+      ? `ESP32-S3 conectado. ${releaseInfo.tag} listo para instalar.`
+      : "ESP32-S3 conectado. Esperando información del firmware.",
+    "ok"
+  );
 }
 
-async function downloadParts(){
-  const build = getBuild();
-  if(!build) throw new Error("No hay firmware disponible para ESP32-S3.");
-
-  const files = [];
-
-  for(const part of build.parts){
-    const firmwareUrl = new URL(part.path, location.href);
-    log(`Descargando ${part.path}…`);
-
-    const response = await fetch(
-      `${firmwareUrl.href}?v=${encodeURIComponent(manifest.version || Date.now())}`,
-      {cache:"no-store"}
-    );
-
-    if(!response.ok){
-      throw new Error(`No fue posible obtener ${part.path} (HTTP ${response.status}).`);
-    }
-
-    const data = new Uint8Array(await response.arrayBuffer());
-    if(!data.length) throw new Error(`El archivo ${part.path} está vacío.`);
-
-    log(`${part.path}: ${(data.length/1024).toFixed(1)} KB · offset 0x${Number(part.offset).toString(16).toUpperCase()}`);
-    files.push({data, address:Number(part.offset)});
+async function downloadFirmware(){
+  if(!releaseInfo){
+    throw new Error("No hay un Release válido seleccionado.");
   }
 
-  return files;
+  setResult(`Descargando ${releaseInfo.assetName}…`);
+  log(`Descargando firmware desde GitHub: ${releaseInfo.assetName}`);
+
+  const response = await fetch(releaseInfo.assetUrl, {
+    cache:"no-store"
+  });
+
+  if(!response.ok){
+    throw new Error(
+      `No fue posible descargar el firmware desde GitHub (HTTP ${response.status}).`
+    );
+  }
+
+  const data = new Uint8Array(await response.arrayBuffer());
+
+  if(data.length < 1024){
+    throw new Error("El archivo descargado no parece ser un firmware válido.");
+  }
+
+  log(`Firmware descargado: ${(data.length/1024/1024).toFixed(2)} MB`);
+
+  return data;
 }
 
 async function flashFirmware(){
-  if(!loader) throw new Error("Primero conecta el ESP32-S3.");
+  if(!loader){
+    throw new Error("Primero conecta el ESP32-S3.");
+  }
 
-  const files = await downloadParts();
+  if(!releaseInfo){
+    throw new Error("No se encontró firmware disponible.");
+  }
+
+  const data = await downloadFirmware();
 
   $("connectBtn").disabled = true;
   $("flashBtn").disabled = true;
@@ -254,6 +386,7 @@ async function flashFirmware(){
   try{
     setResult("Preparando memoria…");
     log("Borrando memoria flash…");
+
     await loader.eraseFlash();
 
     setProgress(5);
@@ -261,13 +394,18 @@ async function flashFirmware(){
     setResult("Instalando firmware… 0 %");
 
     await loader.writeFlash({
-      fileArray: files,
-      flashMode: "dio",
-      flashFreq: "80m",
-      flashSize: "16MB",
-      eraseAll: false,
-      compress: true,
-      reportProgress: (_fileIndex, written, total) => {
+      fileArray:[
+        {
+          data,
+          address:FLASH_ADDRESS
+        }
+      ],
+      flashMode:"dio",
+      flashFreq:"80m",
+      flashSize:"16MB",
+      eraseAll:false,
+      compress:true,
+      reportProgress:(_fileIndex, written, total) => {
         const pct = total ? (written / total) * 100 : 0;
         setProgress(5 + pct * 0.94);
         setResult(`Instalando firmware… ${pct.toFixed(1)} %`);
@@ -282,12 +420,18 @@ async function flashFirmware(){
 
     setProgress(100);
     $("deviceState").textContent = "instalación completada";
-    setResult(`Instalación completada: Indy Open HamWatch v${manifest.version || ""}. Ya puedes desconectar el reloj.`, "ok");
-    log("Instalación completada correctamente.");
-    log("Ya puedes desconectar el reloj.");
+
+    setResult(
+      `Instalación completada: Indy Open HamWatch ${releaseInfo.tag}. Ya puedes desconectar el reloj.`,
+      "ok"
+    );
+
+    log(`Instalación completada: ${releaseInfo.tag}`);
+    log("Ya puedes desconectar el ESP32-S3.");
+
   } finally {
     $("connectBtn").disabled = false;
-    $("flashBtn").disabled = !loader || !manifest;
+    $("flashBtn").disabled = !(loader && releaseInfo);
   }
 }
 
@@ -296,6 +440,7 @@ $("connectBtn").addEventListener("click", async () => {
     await connectBoard();
   }catch(e){
     $("deviceState").textContent = "sin conectar";
+
     const msg = String(e?.message || e || "");
 
     if(
@@ -305,8 +450,11 @@ $("connectBtn").addEventListener("click", async () => {
     ){
       setResult("Conexión cancelada por el usuario.");
       log("Conexión cancelada por el usuario.");
-    } else {
-      setResult(msg || "No fue posible conectar con el ESP32-S3.", "error");
+    }else{
+      setResult(
+        msg || "No fue posible conectar con el ESP32-S3.",
+        "error"
+      );
       log(`ERROR: ${msg || e}`);
     }
 
@@ -315,9 +463,13 @@ $("connectBtn").addEventListener("click", async () => {
 });
 
 $("flashBtn").addEventListener("click", async () => {
-  if(!manifest) return;
+  if(!releaseInfo) return;
 
-  if(!confirm(`Se instalará Indy Open HamWatch v${manifest.version || ""}. ¿Deseas continuar?`)){
+  if(!confirm(
+    `Se instalará Indy Open HamWatch ${releaseInfo.tag}.\n\n` +
+    `Archivo: ${releaseInfo.assetName}\n\n` +
+    `¿Deseas continuar?`
+  )){
     return;
   }
 
@@ -332,14 +484,18 @@ $("flashBtn").addEventListener("click", async () => {
 
 if("serial" in navigator && window.isSecureContext){
   $("supportStatus").className = "status ok";
-  $("supportStatus").innerHTML = "<strong>Navegador compatible.</strong> Puedes continuar.";
+  $("supportStatus").innerHTML =
+    "<strong>Navegador compatible.</strong> Puedes continuar.";
 }else{
   $("supportStatus").className = "status error";
-  $("supportStatus").innerHTML = "<strong>Navegador no compatible.</strong> Abre esta página con Chrome o Edge mediante HTTPS.";
+  $("supportStatus").innerHTML =
+    "<strong>Navegador no compatible.</strong> Abre esta página con Chrome o Edge mediante HTTPS.";
   $("connectBtn").disabled = true;
 }
 
-loadManifest().catch(e => {
+loadLatestRelease().catch(e => {
+  $("verHamWatch").textContent = "no disponible";
+  $("selectedVersion").textContent = "no disponible";
   setResult(e.message || String(e), "error");
   log(`ERROR: ${e.message || e}`);
 });
