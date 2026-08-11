@@ -1,6 +1,6 @@
 # ⌚📡 OpenWatch — Indy Open HamWatch
 
-### Tu estación de radio en la muñeca.
+### Tu estación de radio en la muñeca.  Imagen Generada con IA.
 
 ![OpenWatch Concept](./openwatch-concept.png)
 
@@ -25,67 +25,22 @@ La idea es aprovechar su **ESP32-S3**, pantalla táctil, conectividad Wi-Fi/Blue
 
 ## 🚀 ¿Qué queremos hacer?
 
-OpenWatch busca convertirse en una pequeña plataforma abierta para llevar herramientas de radioafición directamente a la muñeca.
+Indy Open HamWatch busca convertirse en una pequeña plataforma abierta para llevar herramientas de radioafición directamente a la muñeca.
 
 Entre las funciones que estamos explorando se encuentran:
 
-- 📡 Monitor APRS / APRS-IS
-- 📻 LoRa 433 MHz
-- 💬 Indy Open Messenger
+- 💬 Indy Open Messenger con LoRa 433 MHz 
 - 📊 Monitor de Indy Open iGate
-- 📍 Telemetría de nodos
 - 🌡️ Visualización de sensores
 - 📳 Alertas mediante vibración
 - 🔊 Herramientas de audio
+- 📶 Información RSSI / SNR
 - 〰️ Entrenador CW / Morse
 - 🦊 Fox Hunt mediante LoRa
-- 📶 Información RSSI / SNR
-- 📋 Registro de actividad
 - 🌐 Wi-Fi
 - 🔵 Bluetooth
 
 Y seguramente aparecerán nuevas ideas durante el desarrollo.
-
----
-
-## 💬 Indy Open Messenger
-
-Una de las funciones principales que queremos desarrollar es un sistema de mensajería directa utilizando **LoRa 433 MHz**.
-
-La intención es que OpenWatch pueda comunicarse con otros dispositivos compatibles con el ecosistema Indy Open.
-
-```text
-OpenWatch
-    │
-    │ LoRa 433 MHz
-    ▼
-OpenWatch
-```
-
-También:
-
-```text
-OpenWatch
-    │
-    │ LoRa 433 MHz
-    ▼
-Indy Open LoRa
-    │
-    ▼
-LILYGO / ESP32
-```
-
-El objetivo es crear un protocolo abierto que pueda transportar información como:
-
-- Indicativo
-- Mensajes
-- Telemetría
-- Estado de batería
-- RSSI
-- SNR
-- Información de nodos
-
-Todo ello sin depender necesariamente de Internet o de una red celular.
 
 ---
 
@@ -101,55 +56,6 @@ Entre los objetivos se encuentran:
 - Alertas dirigidas al usuario
 - Estado de Indy Open iGate
 - Información de actividad de red
-
-Ejemplo conceptual:
-
-```text
-XE3ABC-7
-> Indy Open iGate
-
-Última trama: 20 s
-Estado: ONLINE
-```
-
----
-
-## 🖥️ Pantallas previstas
-
-La interfaz está pensada para aprovechar la pantalla táctil del T-Watch S3.
-
-### 🏠 Inicio
-
-Estado general del sistema:
-
-- Indicativo
-- Hora
-- Batería
-- Wi-Fi
-- APRS
-- LoRa
-- iGate
-- Mensajes pendientes
-
-### 📡 APRS Monitor
-
-Visualización de estaciones y actividad APRS.
-
-### 📻 LoRa 433
-
-Nodos LoRa cercanos e información de señal.
-
-### 💬 Messenger
-
-Mensajes directos entre estaciones compatibles.
-
-### 🛰️ iGate Status
-
-Estado de un equipo **Indy Open iGate** disponible en la red.
-
-### 🌡️ Sensores
-
-Información ambiental o telemetría recibida desde otros nodos.
 
 ---
 
@@ -198,50 +104,6 @@ Algunas funciones que podremos investigar posteriormente:
 
 ---
 
-## 🌎 Parte de la familia Indy Open
-
-OpenWatch forma parte de la familia:
-
-- 📡 **Indy Open APRS**
-- 🔧 **Indy Open TNC**
-- 📻 **Indy Open LoRa**
-- ⌚ **Indy Open HamWatch**
-
-El objetivo común es desarrollar herramientas abiertas para experimentar, aprender y aportar nuevas ideas a la comunidad radioaficionada.
-
----
-
-## 🧪 Estado del proyecto
-
-🚧 **EN DESARROLLO ACTIVO**
-
-OpenWatch se encuentra actualmente en sus primeras etapas.
-
-Estamos definiendo y probando:
-
-- Arquitectura del firmware
-- Interfaz gráfica
-- LoRa 433 MHz
-- Indy Open Messenger
-- Integración APRS / APRS-IS
-- Conectividad Wi-Fi
-- Integración con Indy Open iGate
-- Comunicación con Indy Open LoRa
-- Alertas y notificaciones
-- Herramientas para radioaficionados
-
-### ⚠️ Importante
-
-La lista anterior representa nuestros objetivos actuales.
-
-**Las funcionalidades finales pueden variar conforme avance el desarrollo.**
-
-Durante las pruebas algunas características pueden ser modificadas, reemplazadas, ampliadas o descartadas.
-
-Las imágenes y pantallas publicadas durante el desarrollo deben considerarse **conceptos de diseño** y no necesariamente representan la versión final.
-
----
-
 ## ⭐ Sigue el proyecto
 
 Si te interesa OpenWatch:
@@ -263,32 +125,4 @@ Indy Open es un proyecto comunitario desarrollado por interés en la radioafici�
 
 Si OpenWatch te resulta interesante y quieres ayudar a continuar desarrollando, probando hardware y creando nuevas funciones, puedes apoyar voluntariamente el proyecto.
 
-❤️ **Las donaciones son completamente opcionales.**
 
-**Próximamente añadiremos aquí las opciones disponibles para apoyar el desarrollo.**
-
----
-
-## ⚠️ Aviso
-
-Este proyecto tiene fines educativos y experimentales relacionados con la radioafición.
-
-El usuario es responsable de operar cualquier transmisor respetando la legislación aplicable, las frecuencias autorizadas, los límites de potencia y las condiciones correspondientes a su licencia.
-
----
-
-## 📜 Open Source
-
-OpenWatch nace con la intención de ser un proyecto abierto.
-
-Queremos que cualquier radioaficionado pueda:
-
-**aprender → experimentar → modificar → mejorar → compartir**
-
----
-
-## 📡 Indy Open
-
-### Innovación abierta para la comunidad radioaficionada.
-
-**Tu radio. Tu red. Tu proyecto.**
