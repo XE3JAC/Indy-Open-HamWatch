@@ -73,7 +73,7 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
   </div>
 
   <div class="progress"><div id="progressBar"></div></div>
-  <div id="resultStatus" class="status">Buscando la última versión en GitHub Releases…</div>
+  <div id="resultStatus" class="status">Consultando la última versión disponible…</div>
 
   <h3>Consola</h3>
   <pre id="log">Indy Open HamWatch — Web Flasher
@@ -91,24 +91,20 @@ Listo.</pre>
     <li>Pulsa <strong>Conectar ESP32-S3</strong>.</li>
     <li>Selecciona el puerto correspondiente al reloj.</li>
     <li>Pulsa <strong>Instalar firmware</strong>.</li>
-    <li>El Web Flasher descargará automáticamente la última versión publicada.</li>
+    <li>El Web Flasher cargará automáticamente la última versión publicada.</li>
     <li>No desconectes el reloj hasta que aparezca el mensaje de instalación completada.</li>
   </ol>
 </aside>
 
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.2</footer>
+<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.3</footer>
 
 </main>
 
 <script>
-const GITHUB_OWNER = "XE3JAC";
-const GITHUB_REPO  = "Indy-Open-HamWatch";
-
-const TAG_PREFIX   = "watch-v";
-const ASSET_PREFIX = "indy-open-watch-";
-const ASSET_SUFFIX = ".bin";
+const VERSION_URL = "firmware/version.json";
+const FIRMWARE_URL = "firmware/indy-open-watch-latest.bin";
 
 const BAUD = 115200;
 const FLASH_ADDRESS = 0x0;
@@ -161,83 +157,41 @@ function compareVersions(a, b){
 }
 
 async function loadLatestRelease(){
-  setResult("Buscando la última versión de Indy Open HamWatch en GitHub Releases…");
-  log("Consultando GitHub Releases…");
+  setResult("Consultando la última versión disponible…");
+  log("Consultando información del firmware…");
 
-  const apiUrl =
-    `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/releases?per_page=50`;
-
-  const response = await fetch(apiUrl, {
-    cache:"no-store",
-    headers:{
-      "Accept":"application/vnd.github+json"
-    }
+  const response = await fetch(`${VERSION_URL}?nocache=${Date.now()}`, {
+    cache:"no-store"
   });
 
   if(!response.ok){
-    if(response.status === 403){
-      throw new Error("GitHub limitó temporalmente las consultas. Intenta nuevamente en unos minutos.");
-    }
-    throw new Error(`No fue posible consultar GitHub Releases (HTTP ${response.status}).`);
-  }
-
-  const releases = await response.json();
-
-  const watchReleases = releases
-    .filter(r =>
-      !r.draft &&
-      !r.prerelease &&
-      isValidWatchTag(r.tag_name)
-    )
-    .sort((a,b) => compareVersions(a.tag_name, b.tag_name));
-
-  if(!watchReleases.length){
-    throw new Error(`No se encontró ningún Release estable con tag ${TAG_PREFIX}*.`);
-  }
-
-  let selectedRelease = null;
-  let selectedAsset = null;
-
-  for(const release of watchReleases){
-    const wantedName = expectedAssetName(release.tag_name);
-
-    const asset = (release.assets || []).find(a =>
-      a.name.toLowerCase() === wantedName.toLowerCase()
-    );
-
-    if(asset){
-      selectedRelease = release;
-      selectedAsset = asset;
-      break;
-    }
-  }
-
-  if(!selectedRelease || !selectedAsset){
-    const newest = watchReleases[0];
-    const wanted = expectedAssetName(newest.tag_name);
-
     throw new Error(
-      `Se encontró ${newest.tag_name}, pero no el archivo ${wanted}.`
+      `No fue posible consultar la versión del firmware (HTTP ${response.status}).`
     );
+  }
+
+  const info = await response.json();
+
+  if(!info || !info.tag){
+    throw new Error("La información del firmware no es válida.");
   }
 
   releaseInfo = {
-    tag: selectedRelease.tag_name,
-    name: selectedRelease.name || selectedRelease.tag_name,
-    publishedAt: selectedRelease.published_at,
-    assetName: selectedAsset.name,
-    assetUrl: selectedAsset.browser_download_url,
-    assetApiUrl: selectedAsset.url,
-    assetSize: selectedAsset.size
+    tag: info.tag,
+    assetName: info.source_asset || `indy-open-watch-${info.tag.replace(/^watch-/, "")}.bin`,
+    localUrl: FIRMWARE_URL,
+    assetSize: Number(info.size || 0),
+    sha256: info.sha256 || ""
   };
 
   $("verHamWatch").textContent = releaseInfo.tag;
   $("selectedVersion").textContent = releaseInfo.tag;
   $("flashBtn").textContent = `2. Instalar Indy Open HamWatch ${releaseInfo.tag}`;
 
-  log(`Release detectado: ${releaseInfo.tag}`);
-  log(`Firmware detectado: ${releaseInfo.assetName}`);
-  log(`Tamaño publicado: ${(releaseInfo.assetSize/1024/1024).toFixed(2)} MB`);
+  log(`Versión disponible: ${releaseInfo.tag}`);
+  if(releaseInfo.assetSize){
+    log(`Tamaño: ${(releaseInfo.assetSize/1024/1024).toFixed(2)} MB`);
+  }
 
   setResult(
     `Última versión disponible: ${releaseInfo.tag}. Conecta tu ESP32-S3.`,
@@ -320,64 +274,43 @@ async function connectBoard(){
 
 async function downloadFirmware(){
   if(!releaseInfo){
-    throw new Error("No hay un Release válido seleccionado.");
+    throw new Error("No hay firmware disponible.");
   }
 
-  setResult(`Descargando ${releaseInfo.assetName}…`);
-  log(`Descargando firmware: ${releaseInfo.assetName}`);
+  setResult(`Descargando ${releaseInfo.tag}…`);
+  log(`Descargando firmware ${releaseInfo.tag}…`);
 
-  let response = null;
+  const url = `${releaseInfo.localUrl}?v=${encodeURIComponent(releaseInfo.tag)}&nocache=${Date.now()}`;
 
+  let response;
   try{
-    log("Descargando firmware mediante GitHub API…");
-
-    response = await fetch(releaseInfo.assetApiUrl, {
+    response = await fetch(url, {
       method:"GET",
-      redirect:"follow",
-      cache:"no-store",
-      headers:{
-        "Accept":"application/octet-stream",
-        "X-GitHub-Api-Version":"2022-11-28"
-      }
+      cache:"no-store"
     });
-  }catch(apiError){
-    log(`GitHub API no respondió: ${apiError?.message || apiError}`);
-  }
-
-  if(!response || !response.ok){
-    if(response){
-      log(`GitHub API respondió HTTP ${response.status}. Probando descarga pública…`);
-    }else{
-      log("Probando descarga pública del Release…");
-    }
-
-    try{
-      response = await fetch(releaseInfo.assetUrl, {
-        method:"GET",
-        redirect:"follow",
-        cache:"no-store"
-      });
-    }catch(publicError){
-      throw new Error(
-        `No fue posible descargar el firmware desde GitHub: ${publicError?.message || publicError}`
-      );
-    }
+  }catch(error){
+    throw new Error(
+      `No fue posible descargar el firmware: ${error?.message || error}`
+    );
   }
 
   if(!response.ok){
     throw new Error(
-      `No fue posible descargar el firmware desde GitHub (HTTP ${response.status}).`
+      `No fue posible descargar el firmware (HTTP ${response.status}).`
     );
   }
-
-  const contentType = response.headers.get("content-type") || "";
-  log(`Respuesta recibida: ${contentType || "tipo no informado"}`);
 
   const data = new Uint8Array(await response.arrayBuffer());
 
   if(data.length < 1024){
     throw new Error(
       `El archivo recibido no parece ser un firmware válido (${data.length} bytes).`
+    );
+  }
+
+  if(releaseInfo.assetSize && data.length !== releaseInfo.assetSize){
+    log(
+      `Aviso: tamaño descargado ${data.length} bytes; esperado ${releaseInfo.assetSize} bytes.`
     );
   }
 
