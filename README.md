@@ -1,6 +1,8 @@
 # ⌚📡 OpenWatch — Indy Open HamWatch
 
-### Tu estación de radio en la muñeca.  Imagen Generada con IA.
+### Tu estación de radio en la muñeca.  
+
+#W# Imagen Generada con IA.
 
 ![OpenWatch Concept](./openwatch-concept.png)
 
