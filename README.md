@@ -123,8 +123,9 @@ Cada colaboración ayuda a que el proyecto siga creciendo.
 
 ## ☕ Apoya el proyecto
 
-Indy Open es un proyecto comunitario desarrollado por interés en la radioafición, la experimentación y el software/hardware abierto.
+Indy Open es un proyecto comunitario desarrollado por interés en la radioafición, la experimentación y el hardware/software abierto.
 
-Si OpenWatch te resulta interesante y quieres ayudar a continuar desarrollando, probando hardware y creando nuevas funciones, puedes apoyar voluntariamente el proyecto.
+Si quieres ayudar a continuar desarrollando placas, probando hardware y creando nuevas funciones, podrás apoyar voluntariamente el proyecto.
 
+❤️ **Las donaciones son completamente opcionales.**
 
