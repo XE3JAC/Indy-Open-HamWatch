@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Web Flasher de Indy Open HamWatch para LILYGO ESP32-S3.">
-<title>Indy Open HamWatch — Web Flasher</title>
+<meta name="description" content="Web Flasher oficial de Indy Open APRS para ESP8266 / NodeMCU.">
+<title>Indy Open APRS — Web Flasher</title>
 <style>
 :root{
   --bg:#f4f8f9;--panel:#fff;--text:#17363b;--muted:#657a7f;--accent:#0e7c86;
@@ -47,29 +47,37 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
 <main class="wrap">
 <section class="hero">
   <div class="eyebrow">Indy Open Project by XE3JAC</div>
-  <h1>INDY OPEN HAMWATCH</h1>
-  <p>Conecta tu reloj LILYGO ESP32-S3 y sigue el avance de la instalación.</p>
+  <h1>INDY OPEN APRS</h1>
+  <p>Selecciona iGate o Tracker, conecta tu ESP8266 y sigue el avance de la instalación.</p>
 </section>
 
 <div class="grid">
 <section class="card">
-  <h2>Instalar firmware</h2>
+  <h2>Selecciona el firmware</h2>
 
-  <div class="status">
-    <strong>Firmware:</strong> Indy Open HamWatch<br>
-    <strong>Versión:</strong> <span id="verHamWatch">consultando…</span>
+  <div class="selector">
+    <label class="option selected" id="optIgate">
+      <input type="radio" name="firmware" value="igate" checked>
+      <strong>Indy Open iGate</strong>
+      <div class="small">Versión: <span id="verIgate">consultando…</span></div>
+    </label>
+
+    <label class="option" id="optTracker">
+      <input type="radio" name="firmware" value="tracker">
+      <strong>Indy Open Tracker</strong>
+      <div class="small">Versión: <span id="verTracker">consultando…</span></div>
+    </label>
   </div>
 
   <div id="supportStatus" class="status">Comprobando compatibilidad…</div>
 
   <div class="actions">
-    <button id="connectBtn">1. Conectar ESP32-S3</button>
+    <button id="connectBtn">1. Conectar ESP8266</button>
     <button id="flashBtn" disabled>2. Instalar firmware</button>
   </div>
 
   <div class="status">
-    <strong>Equipo:</strong> LILYGO ESP32-S3<br>
-    <strong>Firmware:</strong> Indy Open HamWatch<br>
+    <strong>Firmware:</strong> <span id="selectedFirmware">Indy Open iGate</span><br>
     <strong>Versión:</strong> <span id="selectedVersion">consultando…</span><br>
     <strong>Estado:</strong> <span id="deviceState">sin conectar</span>
   </div>
@@ -78,36 +86,47 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
   <div id="resultStatus" class="status">Preparando Web Flasher…</div>
 
   <h3>Consola</h3>
-  <pre id="log">Indy Open HamWatch — Web Flasher
+  <pre id="log">Indy Open APRS — Web Flasher
 Listo.</pre>
 
-  <div class="warning"><strong>Importante:</strong> este instalador es únicamente para el reloj LILYGO basado en ESP32-S3.</div>
+  <div class="warning"><strong>Importante:</strong> este instalador es únicamente para ESP8266 / NodeMCU.</div>
 </section>
 
 <aside class="card">
   <h2>Procedimiento</h2>
   <ol>
-    <li>Conecta el reloj LILYGO mediante un cable USB de datos.</li>
-    <li>Pulsa <strong>Conectar ESP32-S3</strong>.</li>
-    <li>Selecciona el puerto correspondiente al reloj.</li>
+    <li>Selecciona <strong>Indy Open iGate</strong> o <strong>Indy Open Tracker</strong>.</li>
+    <li>Conecta el ESP8266 / NodeMCU mediante USB.</li>
+    <li>Pulsa <strong>Conectar ESP8266</strong>.</li>
+    <li>Selecciona el puerto correspondiente.</li>
     <li>Pulsa <strong>Instalar firmware</strong>.</li>
-    <li>No desconectes el reloj hasta que aparezca el mensaje de instalación completada.</li>
+    <li>No desconectes el equipo hasta que aparezca el mensaje de instalación completada.</li>
   </ol>
 
   <div class="status"><strong>Recomendación:</strong> utiliza un cable USB de datos y mantén esta ventana abierta durante todo el proceso.</div>
-  <div class="warning"><strong>Atención:</strong> la configuración anterior del reloj puede borrarse durante la instalación.</div>
+  <div class="warning"><strong>Atención:</strong> la configuración anterior del equipo puede borrarse durante la instalación.</div>
 </aside>
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.1.0</footer>
+<footer>Indy Open APRS · Indy Open Project by XE3JAC · Web Flasher v1.0.1</footer>
 </main>
-
 
 <script>
 const BAUD = 115200;
-const MANIFEST_URL = "manifest.json";
 
-let manifest = null;
+const FIRMWARES = {
+  igate: {
+    label: "Indy Open iGate",
+    manifest: "manifest-igate.json"
+  },
+  tracker: {
+    label: "Indy Open Tracker",
+    manifest: "manifest-tracker.json"
+  }
+};
+
+let selectedKey = "igate";
+let manifests = {};
 let port = null;
 let transport = null;
 let loader = null;
@@ -117,8 +136,7 @@ const $ = id => document.getElementById(id);
 
 function log(msg){
   const el = $("log");
-  el.textContent += `
-[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.textContent += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
   el.scrollTop = el.scrollHeight;
 }
 
@@ -132,38 +150,87 @@ function setProgress(p){
   $("progressBar").style.width = `${Math.max(0, Math.min(100, p))}%`;
 }
 
-function getBuild(){
-  return manifest?.builds?.find(b => b.chipFamily === "ESP32-S3") || null;
+function getPart(manifest){
+  return manifest?.builds?.find(b => b.chipFamily === "ESP8266")?.parts?.[0] || null;
 }
 
-async function loadManifest(){
-  setResult("Consultando firmware disponible…");
-  log("Consultando manifest.json…");
+function renderSelection(){
+  document.querySelectorAll(".option").forEach(el => el.classList.remove("selected"));
+  $(selectedKey === "igate" ? "optIgate" : "optTracker").classList.add("selected");
 
-  const response = await fetch(`${MANIFEST_URL}?nocache=${Date.now()}`, {cache:"no-store"});
-  if(!response.ok) throw new Error(`No fue posible cargar manifest.json (HTTP ${response.status}).`);
+  const cfg = FIRMWARES[selectedKey];
+  const manifest = manifests[selectedKey];
 
-  manifest = await response.json();
-  const build = getBuild();
+  $("selectedFirmware").textContent = cfg.label;
+  $("selectedVersion").textContent = manifest?.version ? `v${manifest.version}` : "no disponible";
+  $("flashBtn").textContent = manifest?.version
+    ? `2. Instalar ${cfg.label} v${manifest.version}`
+    : "2. Instalar firmware";
 
-  if(!build || !Array.isArray(build.parts) || !build.parts.length){
-    throw new Error("El manifiesto no contiene un firmware válido para ESP32-S3.");
+  $("flashBtn").disabled = !(loader && manifest);
+}
+
+async function loadManifest(key){
+  const cfg = FIRMWARES[key];
+  const url = `${cfg.manifest}?nocache=${Date.now()}`;
+
+  log(`Consultando ${cfg.label}…`);
+
+  const response = await fetch(url, {cache:"no-store"});
+
+  if(!response.ok){
+    throw new Error(`${cfg.label}: HTTP ${response.status}`);
   }
 
-  const version = manifest.version || "sin versión";
-  $("verHamWatch").textContent = `v${version}`;
-  $("selectedVersion").textContent = `v${version}`;
-  $("flashBtn").textContent = `2. Instalar Indy Open HamWatch v${version}`;
+  const manifest = await response.json();
+  const part = getPart(manifest);
 
-  log(`Indy Open HamWatch v${version} disponible.`);
-  setResult("Firmware disponible. Conecta tu ESP32-S3.", "ok");
+  if(!part){
+    throw new Error(`${cfg.label}: manifiesto inválido`);
+  }
+
+  manifests[key] = manifest;
+  $(key === "igate" ? "verIgate" : "verTracker").textContent = `v${manifest.version}`;
+  log(`${cfg.label} v${manifest.version} disponible.`);
+}
+
+async function loadCatalog(){
+  setResult("Consultando versiones disponibles…");
+
+  const results = await Promise.allSettled([
+    loadManifest("igate"),
+    loadManifest("tracker")
+  ]);
+
+  for(let i=0;i<results.length;i++){
+    if(results[i].status === "rejected"){
+      const key = i === 0 ? "igate" : "tracker";
+      $(key === "igate" ? "verIgate" : "verTracker").textContent = "no disponible";
+      log(`ERROR: ${results[i].reason?.message || results[i].reason}`);
+    }
+  }
+
+  if(!manifests.igate && !manifests.tracker){
+    throw new Error("No se pudo cargar ningún firmware.");
+  }
+
+  if(!manifests[selectedKey]){
+    selectedKey = manifests.igate ? "igate" : "tracker";
+    document.querySelector(`input[value="${selectedKey}"]`).checked = true;
+  }
+
+  renderSelection();
+  setResult("Firmwares disponibles. Conecta tu ESP8266.", "ok");
 }
 
 async function loadEsptool(){
   if(esptoolModule) return esptoolModule;
+
   setResult("Preparando conexión USB…");
   log("Cargando componente de programación…");
+
   esptoolModule = await import("https://cdn.jsdelivr.net/npm/esptool-js@0.6.0/+esm");
+
   log("Componente de programación listo.");
   return esptoolModule;
 }
@@ -179,7 +246,7 @@ async function connectBoard(){
     try{ await transport.disconnect(); }catch{}
   }
 
-  setResult("Selecciona el puerto del ESP32-S3…");
+  setResult("Selecciona el puerto del ESP8266…");
   log("Esperando selección del puerto…");
 
   port = await navigator.serial.requestPort();
@@ -196,56 +263,60 @@ async function connectBoard(){
     debugLogging: false
   });
 
-  setResult("Conectando con el ESP32-S3…");
+  setResult("Conectando con el ESP8266…");
   log("Conectando con la placa…");
 
   const chip = await loader.main();
-  const chipText = String(chip || "");
 
-  if(!chipText.toUpperCase().includes("ESP32-S3") &&
-     !chipText.toUpperCase().includes("ESP32S3")){
-    throw new Error(`La placa conectada no parece ser un ESP32-S3 (${chipText || "chip desconocido"}).`);
+  if(!String(chip).toUpperCase().includes("ESP8266")){
+    throw new Error("La placa conectada no parece ser un ESP8266.");
   }
 
-  $("deviceState").textContent = "ESP32-S3 conectado";
-  $("flashBtn").disabled = !manifest;
-  log(`ESP32-S3 detectado correctamente: ${chipText}`);
-  setResult("ESP32-S3 conectado. Listo para instalar.", "ok");
+  $("deviceState").textContent = "ESP8266 conectado";
+  log("ESP8266 detectado correctamente.");
+  renderSelection();
+  setResult("ESP8266 conectado. Listo para instalar.", "ok");
 }
 
-async function downloadParts(){
-  const build = getBuild();
-  if(!build) throw new Error("No hay firmware disponible para ESP32-S3.");
+async function downloadFirmware(){
+  const cfg = FIRMWARES[selectedKey];
+  const manifest = manifests[selectedKey];
+  const part = getPart(manifest);
 
-  const files = [];
-
-  for(const part of build.parts){
-    const firmwareUrl = new URL(part.path, location.href);
-    log(`Descargando ${part.path}…`);
-
-    const response = await fetch(
-      `${firmwareUrl.href}?v=${encodeURIComponent(manifest.version || Date.now())}`,
-      {cache:"no-store"}
-    );
-
-    if(!response.ok){
-      throw new Error(`No fue posible obtener ${part.path} (HTTP ${response.status}).`);
-    }
-
-    const data = new Uint8Array(await response.arrayBuffer());
-    if(!data.length) throw new Error(`El archivo ${part.path} está vacío.`);
-
-    log(`${part.path}: ${(data.length/1024).toFixed(1)} KB · offset 0x${Number(part.offset).toString(16).toUpperCase()}`);
-    files.push({data, address:Number(part.offset)});
+  if(!manifest || !part){
+    throw new Error("No hay firmware disponible para esta opción.");
   }
 
-  return files;
+  const firmwareUrl = new URL(part.path, location.href);
+
+  setResult(`Preparando ${cfg.label} v${manifest.version}…`);
+  log(`Preparando ${cfg.label} v${manifest.version}…`);
+
+  const response = await fetch(`${firmwareUrl.href}?v=${encodeURIComponent(manifest.version)}`, {
+    cache:"no-store"
+  });
+
+  if(!response.ok){
+    throw new Error(`No fue posible obtener el firmware seleccionado (HTTP ${response.status}).`);
+  }
+
+  const data = new Uint8Array(await response.arrayBuffer());
+
+  if(data.length < 1024){
+    throw new Error("El firmware descargado no parece válido.");
+  }
+
+  log(`Firmware preparado correctamente (${(data.length/1024).toFixed(1)} KB).`);
+  return {manifest, part, data};
 }
 
-async function flashFirmware(){
-  if(!loader) throw new Error("Primero conecta el ESP32-S3.");
+async function flashSelected(){
+  if(!loader){
+    throw new Error("Primero conecta el ESP8266.");
+  }
 
-  const files = await downloadParts();
+  const cfg = FIRMWARES[selectedKey];
+  const {manifest, part, data} = await downloadFirmware();
 
   $("connectBtn").disabled = true;
   $("flashBtn").disabled = true;
@@ -253,7 +324,7 @@ async function flashFirmware(){
 
   try{
     setResult("Preparando memoria…");
-    log("Borrando memoria flash…");
+    log("Preparando memoria del ESP8266…");
     await loader.eraseFlash();
 
     setProgress(5);
@@ -261,10 +332,10 @@ async function flashFirmware(){
     setResult("Instalando firmware… 0 %");
 
     await loader.writeFlash({
-      fileArray: files,
+      fileArray: [{data, address: part.offset || 0}],
       flashMode: "dio",
-      flashFreq: "80m",
-      flashSize: "16MB",
+      flashFreq: "40m",
+      flashSize: "4MB",
       eraseAll: false,
       compress: true,
       reportProgress: (_fileIndex, written, total) => {
@@ -282,23 +353,33 @@ async function flashFirmware(){
 
     setProgress(100);
     $("deviceState").textContent = "instalación completada";
-    setResult(`Instalación completada: Indy Open HamWatch v${manifest.version || ""}. Ya puedes desconectar el reloj.`, "ok");
+    setResult(`Instalación completada: ${cfg.label} v${manifest.version}. Ya puedes desconectar el ESP8266.`, "ok");
     log("Instalación completada correctamente.");
-    log("Ya puedes desconectar el reloj.");
+    log("Ya puedes desconectar el ESP8266.");
+
   } finally {
     $("connectBtn").disabled = false;
-    $("flashBtn").disabled = !loader || !manifest;
+    $("flashBtn").disabled = false;
   }
 }
+
+document.querySelectorAll('input[name="firmware"]').forEach(input => {
+  input.addEventListener("change", () => {
+    selectedKey = input.value;
+    renderSelection();
+    log(`Seleccionado: ${FIRMWARES[selectedKey].label}.`);
+  });
+});
 
 $("connectBtn").addEventListener("click", async () => {
   try{
     await connectBoard();
   }catch(e){
     $("deviceState").textContent = "sin conectar";
+
     const msg = String(e?.message || e || "");
 
-    if(
+    if (
       e?.name === "NotFoundError" ||
       msg.includes("No port selected by the user") ||
       msg.includes("No port selected")
@@ -306,7 +387,7 @@ $("connectBtn").addEventListener("click", async () => {
       setResult("Conexión cancelada por el usuario.");
       log("Conexión cancelada por el usuario.");
     } else {
-      setResult(msg || "No fue posible conectar con el ESP32-S3.", "error");
+      setResult(msg || "No fue posible conectar con el ESP8266.", "error");
       log(`ERROR: ${msg || e}`);
     }
 
@@ -315,14 +396,15 @@ $("connectBtn").addEventListener("click", async () => {
 });
 
 $("flashBtn").addEventListener("click", async () => {
+  const manifest = manifests[selectedKey];
   if(!manifest) return;
 
-  if(!confirm(`Se instalará Indy Open HamWatch v${manifest.version || ""}. ¿Deseas continuar?`)){
+  if(!confirm(`Se instalará ${FIRMWARES[selectedKey].label} v${manifest.version}. ¿Deseas continuar?`)){
     return;
   }
 
   try{
-    await flashFirmware();
+    await flashSelected();
   }catch(e){
     setProgress(0);
     setResult(e.message || String(e), "error");
@@ -335,15 +417,14 @@ if("serial" in navigator && window.isSecureContext){
   $("supportStatus").innerHTML = "<strong>Navegador compatible.</strong> Puedes continuar.";
 }else{
   $("supportStatus").className = "status error";
-  $("supportStatus").innerHTML = "<strong>Navegador no compatible.</strong> Abre esta página con Chrome o Edge mediante HTTPS.";
+  $("supportStatus").innerHTML = "<strong>Navegador no compatible.</strong> Abre esta página con Chrome o Edge.";
   $("connectBtn").disabled = true;
 }
 
-loadManifest().catch(e => {
+loadCatalog().catch(e => {
   setResult(e.message || String(e), "error");
   log(`ERROR: ${e.message || e}`);
 });
 </script>
-
 </body>
 </html>
