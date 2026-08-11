@@ -1,0 +1,131 @@
+name: Sync HamWatch Web Flasher
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-firmware:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Resolve HamWatch release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="$(
+              gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+                --jq '.[] | select(.draft == false and .prerelease == false) | .tag_name' \
+              | grep '^watch-v' \
+              | sort -V \
+              | tail -n 1
+            )"
+          fi
+
+          if [[ -z "${TAG:-}" ]]; then
+            echo "No se encontró ningún Release watch-v*."
+            exit 1
+          fi
+
+          if [[ ! "$TAG" =~ ^watch-v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "El tag '$TAG' no corresponde a HamWatch."
+            exit 1
+          fi
+
+          VERSION="${TAG#watch-}"
+          ASSET="indy-open-watch-${VERSION}.bin"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+
+          echo "Release: $TAG"
+          echo "Asset:   $ASSET"
+
+      - name: Download merged firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          ASSET: ${{ steps.release.outputs.asset }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf .webflasher-download
+          mkdir -p .webflasher-download
+
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$ASSET" \
+            --dir .webflasher-download
+
+          test -f ".webflasher-download/$ASSET"
+
+      - name: Update Web Flasher firmware
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          ASSET: ${{ steps.release.outputs.asset }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p s3-webflasher/firmware
+
+          cp ".webflasher-download/$ASSET" \
+             "s3-webflasher/firmware/indy-open-watch-latest.bin"
+
+          SIZE="$(stat -c%s "s3-webflasher/firmware/indy-open-watch-latest.bin")"
+          SHA256="$(sha256sum "s3-webflasher/firmware/indy-open-watch-latest.bin" | awk '{print $1}')"
+
+          jq -n \
+            --arg tag "$TAG" \
+            --arg source_asset "$ASSET" \
+            --arg file "indy-open-watch-latest.bin" \
+            --arg sha256 "$SHA256" \
+            --argjson size "$SIZE" \
+            '{
+              tag: $tag,
+              source_asset: $source_asset,
+              file: $file,
+              size: $size,
+              sha256: $sha256
+            }' > s3-webflasher/firmware/version.json
+
+          echo "Firmware sincronizado:"
+          cat s3-webflasher/firmware/version.json
+
+      - name: Commit Web Flasher firmware
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            s3-webflasher/firmware/indy-open-watch-latest.bin \
+            s3-webflasher/firmware/version.json
+
+          if git diff --cached --quiet; then
+            echo "No hay cambios que publicar."
+            exit 0
+          fi
+
+          git commit -m "Update HamWatch Web Flasher firmware to ${{ steps.release.outputs.tag }}"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
