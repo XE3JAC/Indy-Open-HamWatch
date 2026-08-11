@@ -98,7 +98,7 @@ Listo.</pre>
 
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.1</footer>
+<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.2</footer>
 
 </main>
 
@@ -227,6 +227,7 @@ async function loadLatestRelease(){
     publishedAt: selectedRelease.published_at,
     assetName: selectedAsset.name,
     assetUrl: selectedAsset.browser_download_url,
+    assetApiUrl: selectedAsset.url,
     assetSize: selectedAsset.size
   };
 
@@ -323,11 +324,45 @@ async function downloadFirmware(){
   }
 
   setResult(`Descargando ${releaseInfo.assetName}…`);
-  log(`Descargando firmware desde GitHub: ${releaseInfo.assetName}`);
+  log(`Descargando firmware: ${releaseInfo.assetName}`);
 
-  const response = await fetch(releaseInfo.assetUrl, {
-    cache:"no-store"
-  });
+  let response = null;
+
+  try{
+    log("Descargando firmware mediante GitHub API…");
+
+    response = await fetch(releaseInfo.assetApiUrl, {
+      method:"GET",
+      redirect:"follow",
+      cache:"no-store",
+      headers:{
+        "Accept":"application/octet-stream",
+        "X-GitHub-Api-Version":"2022-11-28"
+      }
+    });
+  }catch(apiError){
+    log(`GitHub API no respondió: ${apiError?.message || apiError}`);
+  }
+
+  if(!response || !response.ok){
+    if(response){
+      log(`GitHub API respondió HTTP ${response.status}. Probando descarga pública…`);
+    }else{
+      log("Probando descarga pública del Release…");
+    }
+
+    try{
+      response = await fetch(releaseInfo.assetUrl, {
+        method:"GET",
+        redirect:"follow",
+        cache:"no-store"
+      });
+    }catch(publicError){
+      throw new Error(
+        `No fue posible descargar el firmware desde GitHub: ${publicError?.message || publicError}`
+      );
+    }
+  }
 
   if(!response.ok){
     throw new Error(
@@ -335,13 +370,18 @@ async function downloadFirmware(){
     );
   }
 
+  const contentType = response.headers.get("content-type") || "";
+  log(`Respuesta recibida: ${contentType || "tipo no informado"}`);
+
   const data = new Uint8Array(await response.arrayBuffer());
 
   if(data.length < 1024){
-    throw new Error("El archivo descargado no parece ser un firmware válido.");
+    throw new Error(
+      `El archivo recibido no parece ser un firmware válido (${data.length} bytes).`
+    );
   }
 
-  log(`Firmware descargado: ${(data.length/1024/1024).toFixed(2)} MB`);
+  log(`Firmware descargado correctamente: ${(data.length/1024/1024).toFixed(2)} MB`);
 
   return data;
 }
