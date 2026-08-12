@@ -72,7 +72,8 @@ footer{color:var(--muted);text-align:center;font-size:.9rem;margin-top:28px}
     <strong>Estado:</strong> <span id="deviceState">sin conectar</span>
   </div>
 
-  <div class="progress"><div id="progressBar"></div></div>
+  <div class="small" id="progressText"><strong>Progreso de instalación:</strong> 0 %</div>
+<div class="progress"><div id="progressBar"></div></div>
   <div id="resultStatus" class="status">Consultando la última versión disponible…</div>
 
   <h3>Consola</h3>
@@ -98,7 +99,7 @@ Listo.</pre>
 
 </div>
 
-<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.3</footer>
+<footer>Indy Open HamWatch · Indy Open Project by XE3JAC · Web Flasher v0.2.4</footer>
 
 </main>
 
@@ -130,7 +131,9 @@ function setResult(text, cls=""){
 }
 
 function setProgress(p){
-  $("progressBar").style.width = `${Math.max(0, Math.min(100, p))}%`;
+  const value = Math.max(0, Math.min(100, p));
+  $("progressBar").style.width = `${value}%`;
+  $("progressText").innerHTML = `<strong>Progreso de instalación:</strong> ${value.toFixed(0)} %`;
 }
 
 function expectedAssetName(tag){
@@ -335,14 +338,11 @@ async function flashFirmware(){
   setProgress(0);
 
   try{
-    setResult("Preparando memoria…");
-    log("Borrando memoria flash…");
+    setProgress(0);
+    setResult("Iniciando instalación… 0 %");
+    log("Iniciando instalación del firmware…");
 
-    await loader.eraseFlash();
-
-    setProgress(5);
-    log("Memoria preparada.");
-    setResult("Instalando firmware… 0 %");
+    let lastLogged = -10;
 
     await loader.writeFlash({
       fileArray:[
@@ -358,14 +358,21 @@ async function flashFirmware(){
       compress:true,
       reportProgress:(_fileIndex, written, total) => {
         const pct = total ? (written / total) * 100 : 0;
-        setProgress(5 + pct * 0.94);
+        setProgress(pct);
         setResult(`Instalando firmware… ${pct.toFixed(1)} %`);
+
+        const milestone = Math.floor(pct / 10) * 10;
+        if(milestone >= 0 && milestone <= 100 && milestone > lastLogged){
+          lastLogged = milestone;
+          log(`Escribiendo firmware: ${milestone}%`);
+        }
       }
     });
 
-    setProgress(99);
+    setProgress(100);
     setResult("Finalizando instalación…");
     log("Firmware escrito correctamente.");
+    log("Reiniciando ESP32-S3…");
 
     await loader.after("hard_reset");
 
