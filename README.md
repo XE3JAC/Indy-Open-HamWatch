@@ -26,8 +26,7 @@ La idea es aprovechar su **ESP32-S3**, pantalla táctil, conectividad Wi-Fi/Blue
 # WEBFLASHER - Indy Open HamWatch
 # https://xe3jac.github.io/Indy-Open-HamWatch/s3-webflasher/
 
-
-**Para poder realizar envió de balizas de posicionamiento desde el reloj se debe instalar la app de Android que permitirá conectar el reloj con por medio del Bluetooth a el teléfono para obtener la ubicación GPS además de actualizar la hora y la fecha.**
+**Para poder realizar el envió de balizas con posicionamiento desde el reloj se debe instalar la app de Android que permitirá conectar el reloj por medio del Bluetooth al teléfono para obtener la ubicación GPS además de actualizar la hora y la fecha.**
 
 **Nota:** no es indispensable solo se requiere si se desea enviar balizas con ubicación todas las demás características estarán disponibles.
 
