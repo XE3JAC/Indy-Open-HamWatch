@@ -1,7 +1,7 @@
 {
-  "tag": "watch-v.0.2.0",
-  "source_asset": "indy-open-watch-v.0.2.0.bin",
+  "tag": "watch-v.0.2.1",
+  "source_asset": "indy-open-watch-v.0.2.1.bin",
   "file": "indy-open-watch-latest.bin",
-  "size": 1886496,
-  "sha256": "9ff559b62669cf6aa6b04d9fa64f409064c735661ba944d2428c5bb8cbddd0d0"
+  "size": 1886848,
+  "sha256": "d5fb9ec2ef266b8f77b611677c7bc1a2430cb6b0048c3bcc0ddd7ea591a640b4"
 }
