@@ -28,7 +28,7 @@ La idea es aprovechar su **ESP32-S3**, pantalla táctil, conectividad Wi-Fi/Blue
 
 **Para poder realizar el envió de balizas con posicionamiento desde el reloj se debe instalar la app de Android que permitirá conectar el reloj por medio del Bluetooth al teléfono para obtener la ubicación GPS además de actualizar la hora y la fecha.**
 
-**Nota:** no es indispensable solo se requiere si se desea enviar balizas con ubicación todas las demás características estarán disponibles.
+**Nota:** No es indispensable solo se requiere si se desea enviar balizas con ubicación todas las demás características estarán disponibles.
 
 ---
 
