@@ -44,7 +44,10 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$TAG" =~ ^watch-v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+          # Convención del proyecto:
+          # tag: watch-v0.1.1
+          # asset: indy-open-watch-v0.1.1.bin
+          if [[ "$TAG" != watch-v* ]]; then
             echo "El tag '$TAG' no corresponde a HamWatch."
             exit 1
           fi
