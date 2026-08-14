@@ -1,4 +1,4 @@
-# ⌚📡 OpenWatch — Indy Open HamWatch
+# ⌚📡 Indy Open Ham T-Watch S3
 
 ## Tu estación de radio en la muñeca.  
 
@@ -6,14 +6,14 @@
 
 ![OpenWatch Concept](./openwatch-concept.png)
 
-**OpenWatch / Indy Open HamWatch** es un proyecto abierto de la familia **Indy Open**, orientado a crear nuevas herramientas para radioaficionados utilizando el **LILYGO T-Watch S3**.
+**Indy Open Ham T-Watch S3** es un proyecto abierto de la familia **Indy Open**, orientado a crear nuevas herramientas para radioaficionados utilizando el **LILYGO T-Watch S3**.
 
 La idea es aprovechar su **ESP32-S3**, pantalla táctil, conectividad Wi-Fi/Bluetooth y radio **LoRa 433 MHz** para convertirlo en una plataforma portátil de experimentación para APRS, mensajería, telemetría, monitoreo y otras funciones relacionadas con radioafición.
 
 > [!IMPORTANT]
 > ## 🚧 PROYECTO EN DESARROLLO
 >
-> **OpenWatch / Indy Open HamWatch se encuentra actualmente en desarrollo activo.**
+> **Indy Open Ham T-Watch S3 se encuentra actualmente en desarrollo activo.**
 >
 > Las características, pantallas, funciones e integraciones descritas en este repositorio representan la visión y los objetivos actuales del proyecto.
 >
@@ -23,10 +23,16 @@ La idea es aprovechar su **ESP32-S3**, pantalla táctil, conectividad Wi-Fi/Blue
 >
 > Si quieres seguir la evolución del proyecto, utiliza ⭐ **Star** y 👀 **Watch** en GitHub para recibir las próximas actualizaciones.
 
-# WEBFLASHER - Indy Open HamWatch
-# https://xe3jac.github.io/Indy-Open-HamWatch/s3-webflasher/
+# WEBFLASHER - Indy Open Ham T-Watch S3
+# https://xe3jac.github.io/Indy-Open-T-Watch-S3/s3-webflasher/
 
-**Para poder realizar el envió de balizas con posicionamiento desde el reloj se debe instalar la app de Android que permitirá conectar el reloj por medio del Bluetooth al teléfono para obtener la ubicación GPS además de actualizar la hora y la fecha.**
+# Indy Open Ham T-Watch S3
+# https://xe3jac.github.io/Indy-Open-T-Watch-S3/
+
+
+
+**Para poder realizar el envió de balizas con posicionamiento desde el reloj se debe instalar la app de Android
+que permitirá conectar el reloj por medio del Bluetooth al teléfono para obtener la ubicación GPS además de actualizar la hora y la fecha.**
 
 **Nota:** No es indispensable solo se requiere si se desea enviar balizas con ubicación todas las demás características estarán disponibles.
 
