@@ -4,7 +4,7 @@
 
 ### Imagen Generada con IA.
 
-![OpenWatch Concept](./openwatch-concept.png)
+![OpenWatch](./openwatch.png)
 
 **Indy Open Ham T-Watch S3** es un proyecto abierto de la familia **Indy Open**, orientado a crear nuevas herramientas para radioaficionados utilizando el **LILYGO T-Watch S3**.
 
