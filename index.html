@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Indy Open Ham T-Watch S3: plataforma abierta para radioaficionados basada en LILYGO T-Watch S3, LoRa 433 MHz, APRS, mensajería y telemetría.">
+  <title>Indy Open Ham T-Watch S3</title>
+  <style>
+    :root {
+      --bg:#0b1020;
+      --panel:#121a2d;
+      --panel-2:#18233c;
+      --text:#eef4ff;
+      --muted:#aab8d0;
+      --accent:#51d0ff;
+      --accent-2:#7cf0c8;
+      --border:#2a3958;
+      --warning:#ffcc66;
+      --danger:#ff8c8c;
+      --shadow:0 18px 50px rgba(0,0,0,.28);
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:radial-gradient(circle at top, #152341 0, var(--bg) 42%, #070b15 100%);
+      color:var(--text);
+      line-height:1.65;
+    }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .wrap { width:min(1050px, calc(100% - 32px)); margin:auto; }
+    header { padding:72px 0 36px; text-align:center; }
+    .eyebrow { color:var(--accent-2); font-weight:800; letter-spacing:.12em; text-transform:uppercase; font-size:.82rem; }
+    h1 { margin:.35rem 0 .3rem; font-size:clamp(2.2rem, 6vw, 4.4rem); line-height:1.05; }
+    .subtitle { margin:0 auto; max-width:760px; color:var(--muted); font-size:1.2rem; }
+    .hero-image { margin:34px auto 12px; max-width:760px; }
+    .hero-image img { display:block; width:100%; max-height:620px; object-fit:contain; border-radius:22px; border:1px solid var(--border); box-shadow:var(--shadow); background:#080d18; }
+    .caption { color:var(--muted); font-size:.9rem; margin-top:9px; }
+    .intro { margin:32px auto 0; max-width:900px; font-size:1.06rem; color:#dbe7fb; }
+    .notice { margin:34px 0; padding:24px; border:1px solid #725f2b; border-left:5px solid var(--warning); border-radius:16px; background:rgba(255,204,102,.08); }
+    .notice h2 { margin:0 0 10px; color:var(--warning); }
+    .notice p:last-child { margin-bottom:0; }
+    .links { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:28px 0 42px; }
+    .link-card { background:linear-gradient(180deg,var(--panel-2),var(--panel)); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow); }
+    .link-card strong { display:block; margin-bottom:6px; font-size:1.05rem; }
+    .gps-note { padding:20px; border-radius:16px; background:rgba(81,208,255,.08); border:1px solid #285e72; }
+    main { padding-bottom:56px; }
+    section { margin:26px 0; padding:28px; background:linear-gradient(180deg,rgba(24,35,60,.92),rgba(18,26,45,.92)); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow); }
+    section h2 { margin-top:0; font-size:1.65rem; }
+    section h3 { color:var(--accent-2); }
+    ul { padding-left:1.3rem; }
+    li { margin:.42rem 0; }
+    .two-col { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:22px; }
+    .support { text-align:center; }
+    .support img { max-width:210px; width:100%; height:auto; }
+    footer { border-top:1px solid var(--border); color:var(--muted); text-align:center; padding:28px 16px 38px; }
+    .small { font-size:.9rem; color:var(--muted); }
+    @media (max-width:640px) {
+      header { padding-top:44px; }
+      section { padding:21px; }
+      .wrap { width:min(100% - 20px, 1050px); }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div class="eyebrow">Indy Open Project</div>
+    <h1>⌚📡 Indy Open Ham T-Watch S3</h1>
+    <p class="subtitle">Tu estación de radio en la muñeca.</p>
+
+    <div class="hero-image">
+      <img src="./openwatch-concept.png" alt="Concepto visual de Indy Open Ham T-Watch S3">
+      <div class="caption">Imagen generada con IA.</div>
+    </div>
+
+    <div class="intro">
+      <p><strong>Indy Open Ham T-Watch S3</strong> es un proyecto abierto de la familia <strong>Indy Open</strong>, orientado a crear nuevas herramientas para radioaficionados utilizando el <strong>LILYGO T-Watch S3</strong>.</p>
+      <p>La idea es aprovechar su <strong>ESP32-S3</strong>, pantalla táctil, conectividad Wi-Fi/Bluetooth y radio <strong>LoRa 433 MHz</strong> para convertirlo en una plataforma portátil de experimentación para APRS, mensajería, telemetría, monitoreo y otras funciones relacionadas con radioafición.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="notice">
+      <h2>🚧 PROYECTO EN DESARROLLO</h2>
+      <p><strong>Indy Open Ham T-Watch S3 se encuentra actualmente en desarrollo activo.</strong></p>
+      <p>Las características, pantallas, funciones e integraciones descritas en este repositorio representan la visión y los objetivos actuales del proyecto.</p>
+      <p>⚠️ <strong>Las funcionalidades pueden cambiar, añadirse, modificarse o eliminarse durante el proceso de desarrollo y pruebas.</strong></p>
+      <p>Algunas funciones mostradas en la documentación y material promocional son conceptos previstos y <strong>pueden no estar implementadas todavía</strong>.</p>
+      <p>Si quieres seguir la evolución del proyecto, utiliza ⭐ <strong>Star</strong> y 👀 <strong>Watch</strong> en GitHub para recibir las próximas actualizaciones.</p>
+    </div>
+
+    <div class="links">
+      <div class="link-card">
+        <strong>⚡ WebFlasher — Indy Open Ham T-Watch S3</strong>
+        <a href="https://xe3jac.github.io/Indy-Open-T-Watch-S3/s3-webflasher/">Abrir WebFlasher</a>
+      </div>
+      <div class="link-card">
+        <strong>🌐 Indy Open Ham T-Watch S3</strong>
+        <a href="https://xe3jac.github.io/Indy-Open-T-Watch-S3/">Abrir sitio del proyecto</a>
+      </div>
+    </div>
+
+    <div class="gps-note">
+      <strong>📍 Posicionamiento y hora desde Android</strong>
+      <p>Para poder realizar el envío de balizas con posicionamiento desde el reloj se debe instalar la app de Android que permitirá conectar el reloj por medio de Bluetooth al teléfono para obtener la ubicación GPS, además de actualizar la hora y la fecha.</p>
+      <p><strong>Nota:</strong> No es indispensable; solo se requiere si se desea enviar balizas con ubicación. Todas las demás características estarán disponibles.</p>
+    </div>
+
+    <section>
+      <h2>🚀 ¿Qué queremos hacer?</h2>
+      <p>Indy Open HamWatch busca convertirse en una pequeña plataforma abierta para llevar herramientas de radioafición directamente a la muñeca.</p>
+      <p>Entre las funciones que estamos explorando se encuentran:</p>
+      <ul>
+        <li>💬 Indy Open Messenger con LoRa 433 MHz</li>
+        <li>📊 Monitor de Indy Open iGate</li>
+        <li>🌡️ Visualización de sensores</li>
+        <li>📳 Alertas mediante vibración</li>
+        <li>🔊 Herramientas de audio</li>
+        <li>📶 Información RSSI / SNR</li>
+        <li>〰️ Entrenador CW / Morse</li>
+        <li>🦊 Fox Hunt mediante LoRa</li>
+        <li>🌐 Wi-Fi</li>
+        <li>🔵 Bluetooth</li>
+      </ul>
+      <p>Y seguramente aparecerán nuevas ideas durante el desarrollo.</p>
+    </section>
+
+    <section>
+      <h2>📡 APRS</h2>
+      <p>Cuando exista conexión Wi-Fi, OpenWatch podrá explorar funciones relacionadas con <strong>APRS / APRS-IS</strong>.</p>
+      <p>Entre los objetivos se encuentran:</p>
+      <ul>
+        <li>Monitor de estaciones</li>
+        <li>Visualización de últimas tramas</li>
+        <li>Mensajes APRS</li>
+        <li>Alertas dirigidas al usuario</li>
+        <li>Estado de Indy Open iGate</li>
+        <li>Información de actividad de red</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>🔧 Hardware objetivo</h2>
+      <p>El desarrollo inicial está pensado para:</p>
+      <h3>LILYGO T-Watch S3</h3>
+      <p>Características que queremos aprovechar:</p>
+      <div class="two-col">
+        <ul>
+          <li>ESP32-S3</li>
+          <li>LoRa SX1262</li>
+          <li>433 MHz</li>
+          <li>Wi-Fi</li>
+          <li>Bluetooth</li>
+          <li>Pantalla táctil IPS 240 × 240</li>
+        </ul>
+        <ul>
+          <li>RTC</li>
+          <li>Acelerómetro BMA423</li>
+          <li>Micrófono PDM</li>
+          <li>Amplificador de audio MAX98357A</li>
+          <li>Motor háptico</li>
+          <li>USB OTG</li>
+          <li>Gestión integrada de batería</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>🦊 Ideas futuras</h2>
+      <p>OpenWatch pretende ser una plataforma experimental y abierta.</p>
+      <p>Algunas funciones que podremos investigar posteriormente:</p>
+      <div class="two-col">
+        <ul>
+          <li>Fox Hunt LoRa</li>
+          <li>Balizas</li>
+          <li>Entrenador Morse</li>
+          <li>Generador CW</li>
+          <li>Notas de voz</li>
+          <li>Telemetría</li>
+        </ul>
+        <ul>
+          <li>Mapas simplificados</li>
+          <li>Alertas APRS</li>
+          <li>Comunicación con Indy Open LoRa</li>
+          <li>Control remoto de Indy Open iGate</li>
+          <li>Herramientas para POTA / SOTA</li>
+          <li>Diagnóstico de enlaces LoRa</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>⭐ Sigue el proyecto</h2>
+      <p>Si te interesa OpenWatch:</p>
+      <ul>
+        <li>⭐ Dale una <strong>Star</strong> al repositorio</li>
+        <li>👀 Usa <strong>Watch</strong> para recibir actualizaciones</li>
+        <li>🍴 Haz <strong>Fork</strong> si quieres experimentar</li>
+        <li>💡 Comparte ideas y sugerencias</li>
+        <li>🐛 Reporta errores</li>
+        <li>🤝 Contribuye al desarrollo</li>
+      </ul>
+      <p>Cada colaboración ayuda a que el proyecto siga creciendo.</p>
+    </section>
+
+    <section class="support">
+      <h2>☕ Apoya el proyecto</h2>
+      <p>Indy Open es un proyecto comunitario desarrollado por interés en la radioafición, la experimentación y el hardware/software abierto.</p>
+      <p>Si quieres ayudar a continuar desarrollando placas, probando hardware y creando nuevas funciones, podrás apoyar voluntariamente el proyecto.</p>
+      <p>❤️ <strong>Las donaciones son completamente opcionales.</strong></p>
+      <p>
+        <a href="https://www.paypal.com/donate?hosted_button_id=2RX7AT3HP4RNG" aria-label="Donar con PayPal">
+          <img src="https://www.paypalobjects.com/es_XC/MX/i/btn/btn_donateCC_LG.gif" alt="Donar con PayPal">
+        </a>
+      </p>
+      <p><strong>¡Gracias por apoyar Indy Open APRS! 73 de XE3JAC</strong></p>
+    </section>
+  </main>
+
+  <footer>
+    Indy Open Ham T-Watch S3 · Indy Open Project by XE3JAC
+  </footer>
+</body>
+</html>
